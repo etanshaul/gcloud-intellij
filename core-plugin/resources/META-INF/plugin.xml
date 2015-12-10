@@ -34,6 +34,7 @@ Code inspections for AppEngine Java code.</description>
     <programRunner implementation="com.google.gct.idea.debugger.CloudDebuggerRunner"/>
     <xdebugger.breakpointType implementation="com.google.gct.idea.debugger.CloudLineBreakpointType"/>
     <projectService serviceImplementation="com.google.gct.idea.debugger.CloudDebugProcessStateSerializer"/>
+    <remoteServer.type implementation="com.google.gct.idea.appengine.cloud.ManagedVmCloudType"/>
 
     <localInspection language="JAVA" shortName="ApiName" bundle="messages.EndpointBundle"  hasStaticDescription="true"
                      key="api.name.name" groupKey="inspections.group.name" enabledByDefault="true" level="ERROR"
