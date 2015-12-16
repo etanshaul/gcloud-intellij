@@ -21,18 +21,18 @@
       </component>
       <component id="df74a" class="javax.swing.JLabel">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Cloud SDK Location"/>
+          <text resource-bundle="messages/CloudToolsBundle" key="appengine.cloudsdk.location.label"/>
         </properties>
       </component>
       <component id="9625" class="javax.swing.JLabel">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Project"/>
+          <text resource-bundle="messages/CloudToolsBundle" key="cloud.project.label"/>
         </properties>
       </component>
       <hspacer id="dda7e">

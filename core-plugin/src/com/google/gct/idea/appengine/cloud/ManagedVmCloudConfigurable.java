@@ -34,7 +34,7 @@ public class ManagedVmCloudConfigurable extends RemoteServerConfigurable impleme
         this.project = project;
 
         cloudSdkLocationField.addBrowseFolderListener(
-                GctBundle.message("appengine.cloudsdk.location.field"),
+                GctBundle.message("appengine.cloudsdk.location.browse.button"),
                 null,
                 project,
                 FileChooserDescriptorFactory.createSingleFileDescriptor()
