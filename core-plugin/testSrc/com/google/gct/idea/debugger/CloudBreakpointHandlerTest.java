@@ -17,14 +17,14 @@ package com.google.gct.idea.debugger;
 
 import com.google.api.services.clouddebugger.model.Breakpoint;
 import com.google.api.services.clouddebugger.model.SourceLocation;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.gct.idea.debugger.CloudDebugProcessStateController.SetBreakpointHandler;
-import com.google.gct.idea.debugger.CloudLineBreakpointType.CloudLineBreakpoint;
 
+import com.intellij.ide.projectWizard.ModuleTypeCategory.Java;
 import com.intellij.mock.MockProjectEx;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.pom.Navigatable;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.testFramework.IdeaTestCase;
@@ -33,22 +33,28 @@ import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.xdebugger.XDebugSession;
+import com.intellij.xdebugger.XDebuggerManager;
 import com.intellij.xdebugger.XExpression;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
+import com.intellij.xdebugger.breakpoints.XBreakpointManager;
+import com.intellij.xdebugger.breakpoints.XBreakpointProperties;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import com.intellij.xdebugger.breakpoints.XLineBreakpointType;
 import com.intellij.xdebugger.impl.breakpoints.XLineBreakpointImpl;
 
-import org.jetbrains.annotations.NotNull;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -72,6 +78,7 @@ public class CloudBreakpointHandlerTest extends UsefulTestCase {
   private IdeaProjectTestFixture myFixture;
   private CloudBreakpointHandler myHandler;
   private CloudDebugProcessStateController stateController;
+  private XBreakpointManager breakpointManager;
 
   @SuppressWarnings("JUnitTestCaseWithNonTrivialConstructors")
   public CloudBreakpointHandlerTest() {
@@ -124,6 +131,12 @@ public class CloudBreakpointHandlerTest extends UsefulTestCase {
       }
     }).when(stateController).deleteBreakpointAsync(anyString());
 
+    myHandler = new CloudBreakpointHandler(myProcess);
+
+    XDebuggerManager debuggerManager = Mockito.mock(XDebuggerManager.class);
+    myProject.addComponent(XDebuggerManager.class, debuggerManager);
+    breakpointManager = Mockito.mock(XBreakpointManager.class);
+    when(debuggerManager.getBreakpointManager()).thenReturn(breakpointManager);
   }
 
   @Override
@@ -216,8 +229,6 @@ public class CloudBreakpointHandlerTest extends UsefulTestCase {
     myAddedBp.set(null);
     myRemovedBp.set(null);
 
-    myHandler = new CloudBreakpointHandler(myProcess);
-
     CloudLineBreakpointProperties properties = new CloudLineBreakpointProperties();
     properties.setWatchExpressions(watches);
     properties.setCreatedByServer(createdByServer);
@@ -252,5 +263,40 @@ public class CloudBreakpointHandlerTest extends UsefulTestCase {
 
     myHandler.registerBreakpoint(lineBreakpoint);
     return lineBreakpoint;
+  }
+
+  public void testCropCloudPath() {
+    assertEquals(myHandler.cropCloudPath("app/module/src/main/java/bar/foo/package/Class.java"),
+        "bar/foo/package/Class.java");
+
+    assertEquals(myHandler.cropCloudPath("app/module/src/abcdefg/java/bar/foo/package/Class.java"),
+        "app/module/src/abcdefg/java/bar/foo/package/Class.java");
+  }
+
+  public void testCreateIdeRepresentationsIfNecessary() {
+    List<Breakpoint> breakpoints = ImmutableList.of(
+        new Breakpoint().setId("expected_path").setLocation(
+            new SourceLocation().setLine(1).setPath("app/mod/src/main/java/b/f/pkg/Class.java")),
+        new Breakpoint().setId("unexpected_path").setLocation(
+            new SourceLocation().setLine(2).setPath("app/mod/src/m/j/a/b/c/Class.java")),
+        new Breakpoint().setId("unexpected_good_path").setLocation(
+            new SourceLocation().setLine(3).setPath("b/f/pkg/Class.java")
+        ));
+    when(breakpointManager.findBreakpointAtLine(
+        isA(XLineBreakpointType.class), isA(VirtualFile.class), anyInt())).thenReturn(null);
+    XLineBreakpoint mockLineBreakpoint = Mockito.mock(XLineBreakpoint.class);
+    when(breakpointManager.addLineBreakpoint(isA(XLineBreakpointType.class), anyString(), anyInt(),
+        isA(CloudLineBreakpointProperties.class))).thenReturn(mockLineBreakpoint);
+    when(mockLineBreakpoint.getProperties()).thenReturn(new CloudLineBreakpointProperties());
+
+    VirtualFile virtualFile = Mockito.mock(VirtualFile.class);
+    when(virtualFile.getUrl()).thenReturn("URL");
+    Map<String, VirtualFile> locations = ImmutableMap.of("b/f/pkg/Class.java", virtualFile);
+    JavaUtil.initializeLocationsOnUnitTest(myProject, locations);
+
+    myHandler.createIdeRepresentationsIfNecessary(breakpoints);
+
+    verify(breakpointManager, times(2)).addLineBreakpoint(isA(XLineBreakpointType.class),
+        anyString(), anyInt(), isA(XBreakpointProperties.class));
   }
 }

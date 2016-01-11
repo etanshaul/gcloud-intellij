@@ -18,6 +18,7 @@ package com.google.gct.idea.debugger;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.api.services.clouddebugger.model.Breakpoint;
 import com.google.api.services.clouddebugger.model.SourceLocation;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gct.idea.debugger.CloudDebugProcessStateController.SetBreakpointHandler;
 import com.google.gct.idea.util.GctBundle;
 import com.google.gct.idea.util.GctTracking;
@@ -196,7 +197,7 @@ public class CloudBreakpointHandler
         continue;
       }
 
-      String path = serverBreakpoint.getLocation().getPath();
+      String path = cropCloudPath(serverBreakpoint.getLocation().getPath());
       if (Strings.isNullOrEmpty(path)) {
         continue;
       }
@@ -271,6 +272,25 @@ public class CloudBreakpointHandler
         }
       });
     }
+  }
+
+  /**
+   * Returns a path in the form of <package>/<class_name>.
+   *
+   * <p>This is so that the intermediate map in JavaUtil.getFileFromCloudPath() method recognises
+   * the path key.
+   *
+   * <p>https://github.com/GoogleCloudPlatform/gcloud-intellij/issues/338
+   */
+  @VisibleForTesting
+  String cropCloudPath(String originalCloudPath) {
+    int start = originalCloudPath.indexOf("main/java");
+    if (start != -1) {
+      return originalCloudPath.substring(start+10);
+    }
+
+    LOG.debug("Original cloud path doesn't contain \"main/java\"");
+    return originalCloudPath;
   }
 
   /**

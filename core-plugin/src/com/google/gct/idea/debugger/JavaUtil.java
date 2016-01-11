@@ -17,6 +17,9 @@ package com.google.gct.idea.debugger;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.api.client.util.Maps;
+import com.google.common.annotations.VisibleForTesting;
+
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentIterator;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -84,5 +87,14 @@ public class JavaUtil {
       return null;
     }
     return getCloudPathFromJavaFile((PsiJavaFile)javaFile);
+  }
+
+  // Used to fill ourLocationMaps with test data.
+  @VisibleForTesting
+  static void initializeLocationsOnUnitTest(
+      Project project, Map<String, VirtualFile> files) {
+    if (ApplicationManager.getApplication().isUnitTestMode()) {
+      ourLocationMaps.put(project, files);
+    }
   }
 }
