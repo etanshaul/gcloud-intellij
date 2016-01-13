@@ -25,12 +25,17 @@ import com.intellij.util.PlatformUtils;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Performs runtime initialization for the GCT plugin.
  */
 public class PluginInitializationComponent implements ApplicationComponent {
 
   private static final String PLUGIN_ID = "com.google.gct.core";
+  private static final List<String> SUPPORTED_PLATFORMS =
+      Arrays.asList(PlatformUtils.IDEA_CE_PREFIX, PlatformUtils.IDEA_PREFIX);
 
   @Override
   public void disposeComponent() {
@@ -49,7 +54,7 @@ public class PluginInitializationComponent implements ApplicationComponent {
       if (CloudDebugConfigType.isFeatureEnabled()) {
         enableCloudDebugger();
       }
-    } else {
+    } else if (SUPPORTED_PLATFORMS.contains(PlatformUtils.getPlatformPrefix())) {
       FeedbackUtil.enableGoogleFeedbackErrorReporting(PLUGIN_ID);
       enableCloudDebugger();
     }
