@@ -162,7 +162,7 @@ public class CloudAttachDialog extends DialogWrapper {
       }
     });
 
-    setOKActionEnabled(isContinued() || doValidate() == null);
+    toggleOKActionButton();
   }
 
   @Nullable
@@ -199,11 +199,11 @@ public class CloudAttachDialog extends DialogWrapper {
       return new ValidationInfo(GctBundle.getString("clouddebug.noprojectid"), myElysiumProjectId);
     }
 
-    if (!myDebuggeeTarget.isEnabled()) {
+    if (!myDebuggeeTarget.isEnabled()) {// && myDebuggeeTarget.getItemCount() > 0) {
       return new ValidationInfo(GctBundle.getString("clouddebug.selectvalidproject"), myElysiumProjectId);
     }
 
-    if (myDebuggeeTarget.getSelectedItem() == null) {
+    if (myDebuggeeTarget.getSelectedItem() == null) {// && myDebuggeeTarget.getItemCount() > 0) {
       return new ValidationInfo(GctBundle.getString("clouddebug.nomoduleselected"), myDebuggeeTarget);
     }
 
@@ -217,6 +217,10 @@ public class CloudAttachDialog extends DialogWrapper {
 
   public void setInputState(@Nullable CloudDebugProcessState inputState) {
     myWireup.setInputState(inputState);
+  }
+
+  private void toggleOKActionButton() {
+    setOKActionEnabled(isContinued() || doValidate() == null);
   }
 
   private void buildResult() {
@@ -394,8 +398,7 @@ public class CloudAttachDialog extends DialogWrapper {
   /**
    * This binding between the project and debuggee is refactored out to make it reusable in the future.
    */
-  private static class ProjectDebuggeeBinding {
-    private static final Logger LOG = Logger.getInstance(ProjectDebuggeeBinding.class);
+  private class ProjectDebuggeeBinding {
     private final JComboBox myDebugeeTarget;
     private final ProjectSelector myElysiumProjectId;
     private Debugger myCloudDebuggerClient = null;
@@ -481,6 +484,8 @@ public class CloudAttachDialog extends DialogWrapper {
     @SuppressWarnings("unchecked")
     private void refreshDebugTargetList() {
       myDebugeeTarget.removeAllItems();
+//      myDebuggeeTarget.addItem("Loading..."); // TODO implement a loading state in the modules dropdown
+
       ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
         @Override
         public void run() {
@@ -495,6 +500,7 @@ public class CloudAttachDialog extends DialogWrapper {
                 @Override
                 public void run() {
                   DebugTarget targetSelection = null;
+//                  myDebugeeTarget.removeAllItems();
 
                   if (debuggees == null || debuggees.getDebuggees() == null || debuggees.getDebuggees().isEmpty()) {
                     myDebugeeTarget.setEnabled(false);
@@ -527,6 +533,7 @@ public class CloudAttachDialog extends DialogWrapper {
                         }
                       }
                       myDebugeeTarget.addItem(item);
+                      CloudAttachDialog.this.toggleOKActionButton();
                     }
                   }
                   if (targetSelection != null) {
@@ -542,7 +549,7 @@ public class CloudAttachDialog extends DialogWrapper {
       });
     }
 
-    public static class DebugTarget {
+    public class DebugTarget {
       private static final String MODULE = "module";
 
       private final Debuggee myDebuggee;
